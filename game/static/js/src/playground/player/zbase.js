@@ -22,6 +22,13 @@ class Player extends AcGameObject
         this.spent_time = 0;
 
         this.cur_skill = null;
+
+        if (this.is_me) 
+        {
+            this.img = new Image();
+            this.img.src = this.playground.root.settings.photo;
+        }
+
     }
 
     start()
@@ -45,15 +52,16 @@ class Player extends AcGameObject
             return false;
         });//鼠标右键菜单不响应
         this.playground.game_map.$canvas.mousedown(function(e){
+            const rect = outer.ctx.canvas.getBoundingClientRect();
             if(e.which === 1)
             {
-                outer.move_to(e.clientX, e.clientY);
+                outer.move_to(e.clientX - rect.left, e.clientY - rect.top);
             }
             else if(e.which === 3)
             {
                 if(outer.cur_skill === "fireball")
                 {
-                    outer.shoot_fireball(e.clientX, e.clientY);
+                    outer.shoot_fireball(e.clientX - rect.left, e.clientY - rect.top);
                 }
                 outer.cur_skill = null;
             }
@@ -123,12 +131,13 @@ class Player extends AcGameObject
     update()
     {
         this.spent_time += this.timedelta / 1000;
-        if(!this.is_me && this.spent_time > 4 && Math.random() < 1 / 300.0)
+        if(!this.is_me && this.spent_time > 3 && Math.random() < 1 / 100.0)
         {
             let player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)];
-            let tx = player.x + player.speed * this.vx * this.timedelta / 1000 * 0.3;
-            let ty = player.x + player.speed * this.vy * this.timedelta / 1000 * 0.3;
-            this.shoot_fireball(tx, ty);
+            //let player = this.playground.players[0];
+            let tx = player.x + player.speed * this.vx * this.timedelta / 1000 * 0.1;
+            let ty = player.x + player.speed * this.vy * this.timedelta / 1000 * 0.1;
+            this.shoot_fireball(player.x, player.y);
         }
 
         if(this.damage_speed > 10)
@@ -165,10 +174,23 @@ class Player extends AcGameObject
 
     render()
     {
-        this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false); // 是否顺时针
-        this.ctx.fillStyle = this.color;
-        this.ctx.fill();
+        if (this.is_me)
+        {
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.stroke();
+            this.ctx.clip();
+            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2); 
+            this.ctx.restore();
+        }
+        else
+        {
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false); // 是否顺时针
+            this.ctx.fillStyle = this.color;
+            this.ctx.fill();
+        }
     }
 
     on_destroy()
